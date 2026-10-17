@@ -22,6 +22,10 @@ All other times are considered normal hours.
 
 ## Release Notes
 
+### 1.0.4
+
+- Peak hours now only apply on weekdays (Monday–Friday); weekends are always normal hours
+
 ### 1.0.3
 
 - Added sidebar activity bar badge indicator during peak hours

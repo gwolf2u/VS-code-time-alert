@@ -2,7 +2,7 @@
   "name": "time-alert",
   "displayName": "Time Alert",
   "description": "Status bar indicator for peak/normal UTC hours",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "publisher": "lup-gabriel",
   "icon": "icon.png",
   "engines": {

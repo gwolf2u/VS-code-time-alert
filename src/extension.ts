@@ -5,7 +5,15 @@ let treeView: vscode.TreeView<vscode.TreeItem>;
 let updateInterval: ReturnType<typeof setInterval>;
 let wasPeakHour: boolean | null = null;
 
+function isWeekend(): boolean {
+    const day = new Date().getUTCDay();
+    return day === 0 || day === 6;
+}
+
 function isPeakHour(): boolean {
+    if (isWeekend()) {
+        return false;
+    }
     const hour = new Date().getUTCHours();
     return (hour >= 1 && hour < 4) || (hour >= 6 && hour < 10);
 }
@@ -35,14 +43,15 @@ class TimeAlertProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
         timeItem.iconPath = new vscode.ThemeIcon('clock');
         timeItem.description = 'Current UTC';
 
+        const statusText = peak ? '⚠️ Peak Hour' : (isWeekend() ? '✅ Normal Hour (Weekend)' : '✅ Normal Hour');
         const statusItem = new vscode.TreeItem(
-            peak ? '⚠️ Peak Hour' : '✅ Normal Hour',
+            statusText,
             vscode.TreeItemCollapsibleState.None
         );
         statusItem.iconPath = peak
             ? new vscode.ThemeIcon('warning', new vscode.ThemeColor('charts.red'))
             : new vscode.ThemeIcon('check', new vscode.ThemeColor('charts.green'));
-        statusItem.description = peak ? '🔴 Heavy load period' : '🟢 All clear';
+        statusItem.description = peak ? '🔴 Heavy load period' : (isWeekend() ? '🟢 Weekend — no peak hours' : '🟢 All clear');
 
         const peakInfo = new vscode.TreeItem(
             'Peak windows: 01:00–04:00 & 06:00–10:00 UTC',
@@ -65,6 +74,9 @@ function updateTreeViewAppearance(): void {
     if (peak) {
         treeView.badge = { value: 1, tooltip: 'Peak Hour Active — 01:00–04:00 & 06:00–10:00 UTC' };
         treeView.description = `🔴 PEAK — ${timeStr} UTC`;
+    } else if (isWeekend()) {
+        treeView.badge = undefined;
+        treeView.description = `🟢 Weekend — ${timeStr} UTC`;
     } else {
         treeView.badge = undefined;
         treeView.description = `🟢 Normal — ${timeStr} UTC`;
@@ -79,6 +91,10 @@ function updateStatusBar(): void {
         statusBarItem.text = "$(warning) Peak Hour";
         statusBarItem.color = new vscode.ThemeColor('statusBarItem.errorForeground');
         statusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.errorBackground');
+    } else if (isWeekend()) {
+        statusBarItem.text = "$(check) Normal Hour (Weekend)";
+        statusBarItem.color = new vscode.ThemeColor('terminal.ansiGreen');
+        statusBarItem.backgroundColor = undefined;
     } else {
         statusBarItem.text = "$(check) Normal Hour";
         statusBarItem.color = new vscode.ThemeColor('terminal.ansiGreen');
@@ -137,8 +153,9 @@ export function activate(context: vscode.ExtensionContext) {
         const hour = now.getUTCHours();
         const minute = now.getUTCMinutes();
         const peak = isPeakHour();
+        const statusLabel = peak ? '🔴 Peak Hour' : (isWeekend() ? '🟢 Normal Hour (Weekend)' : '🟢 Normal Hour');
         vscode.window.showInformationMessage(
-            `Current UTC: ${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')} — ${peak ? '🔴 Peak Hour' : '🟢 Normal Hour'}`
+            `Current UTC: ${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')} — ${statusLabel}`
         );
     });
     context.subscriptions.push(disposable);
